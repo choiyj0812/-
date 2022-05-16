@@ -1,11 +1,11 @@
 #define IR 2
 #define led 13
 #define Echo 3
-#define Trig A1
-#define First A5
-#define Second A4
-#define Third 12
-#define Fourth A0
+#define Trig 12
+#define First A0
+#define Second A1
+#define Third A2
+#define Fourth A3
 //Anode
 int Number_FND_A[10][8] = {
   {0,0,0,0,0,0,1,1},  //0
