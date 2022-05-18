@@ -105,12 +105,10 @@ void setup() {
   attachInterrupt(1, btnISR, CHANGE);
 }
 
-unsigned long curr_millis = 0;
-unsigned long prev_millis1 = 0;
-unsigned long prev_millis2 = 0;
-unsigned long prev_millis3 = 0;
-unsigned long prev_millis4 = 0;
-int count = 0;
+unsigned int count_lcd = 0;
+unsigned int count_lcd2 = 0;
+unsigned int count_p = 0;
+
 int count_led = 0;
 int count_sec = 0;
 unsigned long prev_millis_led = 0;
@@ -118,57 +116,58 @@ unsigned long duty = 0;
 bool mode = true;
 
 void loop() {
-  digitalWrite(Trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(Trig, LOW);
-  delayMicroseconds(100);
-  //-------------------------------------------------------
-  if(count >= 100) count = 0;
+  if(count_lcd == 1000){
+    digitalWrite(Trig, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Trig, LOW);
+  }
   
-  curr_millis = millis();
+  if(count_lcd >= 1000){
+    count_lcd = 0;
+    count_p++;
+    if(count_p == 10){
+      count_p = 0;
+    }
+  }
 
-  if(prev_millis1 - curr_millis >= 1){
-    prev_millis1 = curr_millis;
+  count_lcd2 = (count_lcd % 4) + 1;
+
+  if(count_lcd2 > 0 && count_lcd2 <= 1){
     SetCom(1);
     for(int i=0; i<8; i++){
       digitalWrite(i + 4, Number_FND[ten][i]);
     }
   }
-  if(prev_millis2 - curr_millis >= 1){
-    prev_millis2 = curr_millis;
+  if(count_lcd2 > 1 && count_lcd2 <= 2){
     SetCom(2);
     for(int i=0; i<8; i++){
       digitalWrite(i + 4, Number_FND[one][i]);
     }
   }
-  if(prev_millis3 - curr_millis >= 1){
-    prev_millis3 = curr_millis;
+  if(count_lcd2 > 2 && count_lcd2 <= 3){
     SetCom(3);
     for(int i=0; i<8; i++){
       digitalWrite(i + 4, Number_FND[remocon_num][i]);
     }
   }
-  if(prev_millis4 - curr_millis >= 1){
-    prev_millis4 = curr_millis;
+  if(count_lcd2 > 3 && count_lcd2 <= 4){
     SetCom(4);
     for(int i=0; i<8; i++){
-      digitalWrite(i + 4, Number_FND[(int)count / 10][i]);
+      digitalWrite(i + 4, Number_FND[count_p][i]);
     }
-    count++;
   }
+  
+  count_lcd++;
   //-------------------------------------------------------
-  if(prev_millis_led - curr_millis >= 1){
-    if(count_led == 10){
-      prev_millis_led = curr_millis;
-      count_led = 0;
-      digitalWrite(led, HIGH);
-    }
-    else if(count_led == duty){
-      digitalWrite(led, LOW);
-    }
-    count_led++;
-    count_sec++;
+  if(count_led == 10){
+    count_led = 0;
+    digitalWrite(led, HIGH);
   }
+  else if(count_led == duty){
+    digitalWrite(led, LOW);
+  }
+  count_led++;
+  count_sec++;
   if(count_sec == 100){
     count_sec = 0;
     if(mode){
@@ -180,6 +179,7 @@ void loop() {
       if(duty == 1) mode = true;
     }
   }
+  delay(1);
 }
 
 void remoconISR(){
@@ -242,6 +242,9 @@ void btnISR(){
     if(cm >= 100){
       cm = 99;
     }
+    Serial.print("Now : ");
+    Serial.print(cm);
+    Serial.println(" cm");
     ten = (int)cm / 10;
     one = (int)cm % 10;
   }
