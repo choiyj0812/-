@@ -403,10 +403,7 @@ int row = 1, col = 0;
 void loop(){
   if(function != remocon_num) function = remocon_num;
 
-  if(function == 0){
-    SetRow(0);
-    digitalWrite(LED, LOW);
-  }
+  SetRow(0);
   if(function == 1) First();
   if(function == 2) Second();
   if(function == 3) digitalWrite(LED, HIGH);
