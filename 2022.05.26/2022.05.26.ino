@@ -197,7 +197,7 @@ void Others(){
 //-------------------------------------------------------------------------------------------------
 
 //수업용
-#define IR 2
+/*#define IR 2
 #define LED 19
 
 void setup(){
@@ -365,6 +365,229 @@ void Second(){
     
     duty++;
     if(duty == 99) duty = 1;
+  }
+
+  Others();
+}
+
+void Others(){
+  all_row_off();
+  one_line_value(Array[remocon_num][line_num]);
+  one_line_on(line_num);
+  
+  line_num++;
+  if(line_num == 8) line_num = 0;
+}*/
+
+//-------------------------------------------------------------------------------------------------
+
+//수업용 코드 개조
+#define IR 2
+#define LED 19
+
+void setup(){
+  Serial.begin(9600);
+  for(int i=0; i<16; i++){
+    pinMode(i + 3, OUTPUT);
+  }
+
+  for(int i=0; i<8; i++){
+    digitalWrite(i + 3, HIGH);  //column off
+    digitalWrite(i + 11, LOW);  //row off
+  }
+
+  pinMode(LED, OUTPUT);
+
+  pinMode(IR, INPUT);
+  attachInterrupt(0, remoconISR, FALLING);
+}
+
+unsigned long curr_millis = 0;
+unsigned long prev_millis = 0;
+unsigned long dot_millis = 0;
+
+unsigned long curr_micros = 0;
+unsigned long prev_micros = 0;
+unsigned long led_millis = 0;
+
+int count_pwm = 0;
+int duty = 0;
+bool mode = false;
+
+int line_num = 0;
+int num = 0;
+bool count_mode = false;
+int command = 0;
+unsigned char value[8] = {0x23, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+unsigned long remocon_micros[50];
+unsigned int diff_time[33];
+int remocon_count = 0;
+int data_bit[32];
+byte data_byte = 0;
+unsigned char number_of_hex[13] = {0x2D, 0x19, 0x31, 0xBD, 0x11,
+                                  0x39, 0xB5, 0x85, 0xA5, 0x95,
+                                  0x0F, 0x2B, 0x13};
+int remocon_num = 0;
+
+void loop(){
+  curr_millis = millis();
+  curr_micros = micros();
+  
+  if(command != remocon_num){
+    command = remocon_num;
+    digitalWrite(LED, LOW);
+    all_row_off();
+  }
+  
+  if(command == 10){
+    count_mode = false;
+    Count();
+  }
+  else if(command == 11){
+    count_mode = true;
+    Count();
+  }
+  else if(command == 12){
+    all_row_off();
+    PWM();
+  }
+  else Others();
+}
+
+void all_row_off(){
+  for(int i=0; i<8; i++){
+    digitalWrite(i + 11, LOW);  //row off
+  }
+}
+
+void one_line_value(unsigned char Data){
+  for(int i=0; i<8; i++){
+    if(Data & (0x80 >> i)){
+      digitalWrite(i + 3, LOW);
+    }
+    else{
+      digitalWrite(i + 3, HIGH);
+    }
+  }
+}
+
+void one_line_on(int line_num){
+  digitalWrite(11 + line_num, HIGH);
+}
+
+void dot_matrix_function(){
+  all_row_off();
+  one_line_value(Array[num][line_num]);
+  one_line_on(line_num);
+  
+  line_num++;
+  if(line_num == 8) line_num = 0;
+}
+
+void remoconISR(){
+  remocon_micros[remocon_count] = micros();
+
+  if(remocon_count > 0){
+    diff_time[remocon_count - 1] = remocon_micros[remocon_count] - remocon_micros[remocon_count - 1];
+    //-----------------------------------------------------------------------------------------------
+    if(diff_time[remocon_count - 1] > 12500 && diff_time[remocon_count - 1] < 14500){
+      remocon_count = 1;
+    }
+    //-----------------------------------------------------------------------------------------------
+    if(diff_time[remocon_count - 1] > 10500 && diff_time[remocon_count - 1] < 12500){
+      remocon_count = -1;
+      //Serial.println(remocon_num);
+    }
+    //-----------------------------------------------------------------------------------------------
+  }
+  
+  remocon_count++;
+  if(remocon_count == 34){
+    remocon_count = 0;
+    //-----------------------------
+    for(int i=0; i<32; i++){
+      if(diff_time[i] > 1000 && diff_time[i] < 1500){
+        data_bit[i] = 0;
+      }
+      else if(diff_time[i] > 2000 && diff_time[i] < 2500){
+        data_bit[i] = 1;
+      }
+    }
+    //-----------------------------
+    for(int i=0; i<8; i++){
+      data_byte >>= 1;
+      
+      if(data_bit[16 + i] == 1){
+        data_byte |= 0x80;
+      }
+    }
+    //Serial.println(data_byte, HEX);
+    for(int i=0; i<13; i++){
+      if(number_of_hex[i] == (unsigned char)data_byte){
+        remocon_num = i;
+        if(i < 10) Serial.println(i);
+        else if(i == 10) Serial.println('-');
+        else if(i == 11) Serial.println('+');
+        else Serial.println("EQ");
+        break;
+      }
+    }
+  }
+}
+
+void Count(){
+  if(curr_millis - prev_millis >= 1){
+    prev_millis = curr_millis;
+    
+    dot_matrix_function();
+  }
+  if(curr_millis - dot_millis >= 500){
+    dot_millis = curr_millis;
+
+    if(count_mode == true){
+      num++;
+      if(num == 10){
+        count_mode = false;
+        num = 0;
+      }
+    }
+    else{
+      num--;
+      if(num == -1){
+        count_mode = true;
+        num = 9;
+      }
+    }
+  }
+}
+
+void PWM(){
+  if(curr_micros - prev_micros >= 100){
+    prev_micros = curr_micros;
+
+    if(count_pwm == 100) {
+      count_pwm = 0;
+      digitalWrite(LED, HIGH);
+    }
+    else if(count_pwm == duty) digitalWrite(LED, LOW);
+    count_pwm++;
+  }
+  if(curr_millis - led_millis >= 10){
+    led_millis = curr_millis;
+
+    if(mode){
+      duty++;
+      if(duty >= 99){
+        mode = false;
+      }
+    }
+    else{
+      duty--;
+      if(duty <= 1){
+        mode = true;
+      }
+    }
   }
 
   Others();
