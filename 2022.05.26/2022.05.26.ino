@@ -589,8 +589,6 @@ void PWM(){
       }
     }
   }
-
-  Others();
 }
 
 void Others(){
