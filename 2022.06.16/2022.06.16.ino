@@ -1,4 +1,4 @@
-#define NOTE_C4  1911
+/*#define NOTE_C4  1911
 #define NOTE_D4 1702  
 #define NOTE_E4 1516  
 #define NOTE_F4 1431  
@@ -11,7 +11,7 @@
 #define Speed 300
 
 unsigned int melody[8] = {NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_A4, NOTE_B4, NOTE_C5};
-unsigned int melody2[8] = {261, 293, 329, 349, 391, 440, 493, 523};
+unsigned int melody2[8] = {261, 293, 329, 349, 391, 440, 493, 523};*/
 
 //===========================================================
 //piezo buzzer test
@@ -149,68 +149,48 @@ void loop() {
 //===========================================================
 //button matrix
 
-#define COL1 18
-#define COL2 17
-#define COL3 16
-#define COL4 15
-#define ROW1 7
-#define ROW2 8
-#define ROW3 9
-#define ROW4 10
-
-void COLSET(int ch){
-  switch(ch){
-    case 1:
-      digitalWrite(COL1, HIGH);
-      digitalWrite(COL2, LOW);
-      digitalWrite(COL3, LOW);
-      digitalWrite(COL4, LOW);
-      break;
-    case 2:
-      digitalWrite(COL1, LOW);
-      digitalWrite(COL2, HIGH);
-      digitalWrite(COL3, LOW);
-      digitalWrite(COL4, LOW);
-      break;
-    case 3:
-      digitalWrite(COL1, LOW);
-      digitalWrite(COL2, LOW);
-      digitalWrite(COL3, HIGH);
-      digitalWrite(COL4, LOW);
-      break;
-    case 4:
-      digitalWrite(COL1, LOW);
-      digitalWrite(COL2, LOW);
-      digitalWrite(COL3, LOW);
-      digitalWrite(COL4, HIGH);
-      break;
-  }
-}
-
-//===========================================================
-//button matrix test
-
 void setup(){
   Serial.begin(9600);
   for(int i=0; i<4; i++){
     pinMode(i + 7, INPUT);
     pinMode(i + 15, OUTPUT);
   }
-
-  //INIT
-  for(int i=0; i<4; i++){
-    digitalWrite(i + 15, HIGH);
-  }
-  digitalWrite(18, HIGH);
 }
 
+char col_pin_num[4] = {15, 16, 17, 18};
+char row_pin_num[4] = {7, 8, 9, 10};
+char row_flag[4] = {0, 0, 0, 0};
+int col_index = 0;
+
 void loop(){
-  int row1 = digitalRead(7);
-  if(row1 == 0){
-    Serial.println("down");
+  //1. all off
+  for(int i=0; i<4; i++){
+    digitalWrite(col_pin_num[i], LOW);
   }
-  else{
-    Serial.println("up");
+
+  //2. 1 col on
+  digitalWrite(col_pin_num[col_index], HIGH);
+
+  //3. row read
+  for(int i=0; i<4; i++){
+    int row_value = digitalRead(row_pin_num[i]);
+    if(row_value == 0){
+      if(row_flag[i] == 0){
+        row_flag[i] = 1;
+      }
+    }
+    else{
+      if(row_flag[i] == 1){
+        row_flag[i] = 0;
+        Serial.println((col_index + 1) + (i * 4));
+      }
+    }
   }
-  delay(100);
+
+  //col index increase
+  col_index++;
+  if(col_index == 4) col_index = 0;
+
+  //4. delay
+  delay(10);
 }
