@@ -82,7 +82,7 @@ void loop() {
 //===========================================================
 //school bell
 
-unsigned int School_Bell[24] = {NOTE_G4, NOTE_G4, NOTE_A4, NOTE_A4, NOTE_G4, NOTE_G4, NOTE_E4,
+/*unsigned int School_Bell[24] = {NOTE_G4, NOTE_G4, NOTE_A4, NOTE_A4, NOTE_G4, NOTE_G4, NOTE_E4,
                                 NOTE_G4, NOTE_G4, NOTE_E4, NOTE_E4, NOTE_D4,
                                 NOTE_G4, NOTE_G4, NOTE_A4, NOTE_A4, NOTE_G4, NOTE_G4, NOTE_E4,
                                 NOTE_G4, NOTE_E4, NOTE_D4, NOTE_E4, NOTE_C4};
@@ -144,4 +144,73 @@ void loop() {
       }
     }
   }
+}*/
+
+//===========================================================
+//button matrix
+
+#define COL1 18
+#define COL2 17
+#define COL3 16
+#define COL4 15
+#define ROW1 7
+#define ROW2 8
+#define ROW3 9
+#define ROW4 10
+
+void COLSET(int ch){
+  switch(ch){
+    case 1:
+      digitalWrite(COL1, HIGH);
+      digitalWrite(COL2, LOW);
+      digitalWrite(COL3, LOW);
+      digitalWrite(COL4, LOW);
+      break;
+    case 2:
+      digitalWrite(COL1, LOW);
+      digitalWrite(COL2, HIGH);
+      digitalWrite(COL3, LOW);
+      digitalWrite(COL4, LOW);
+      break;
+    case 3:
+      digitalWrite(COL1, LOW);
+      digitalWrite(COL2, LOW);
+      digitalWrite(COL3, HIGH);
+      digitalWrite(COL4, LOW);
+      break;
+    case 4:
+      digitalWrite(COL1, LOW);
+      digitalWrite(COL2, LOW);
+      digitalWrite(COL3, LOW);
+      digitalWrite(COL4, HIGH);
+      break;
+  }
+}
+
+//===========================================================
+//button matrix test
+
+void setup(){
+  Serial.begin(9600);
+  for(int i=0; i<4; i++){
+    pinMode(i + 7, INPUT);
+    pinMode(i + 15, OUTPUT);
+  }
+
+  //INIT
+  for(int i=0; i<4; i++){
+    digitalWrite(i + 15, HIGH);
+  }
+  digitalWrite(18, HIGH);
+}
+
+void loop(){
+  int row1 = digitalRead(7);
+  if(row1 == 0){
+    Serial.println("down");
+  }
+  else{
+    Serial.println("up");
+  }
+  delay(100);
 }
